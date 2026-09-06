@@ -15,7 +15,11 @@ function XGlyph({ size = 18 }: { size?: number }) {
 }
 
 const socials = [
-  { icon: Instagram, href: "#", label: "Instagram" },
+  {
+    icon: Instagram,
+    href: "https://www.instagram.com/grabbo_snu?igsi=MWI5YmY0dXFtNm1peQ==",
+    label: "Instagram",
+  },
   { icon: XGlyph, href: "#", label: "X" },
   { icon: Linkedin, href: "#", label: "LinkedIn" },
 ];
@@ -34,6 +38,7 @@ function MagneticIcon({
   const y = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 200, damping: 15, mass: 0.4 });
   const springY = useSpring(y, { stiffness: 200, damping: 15, mass: 0.4 });
+  const isExternal = href.startsWith("http");
 
   const handleMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const rect = ref.current?.getBoundingClientRect();
@@ -54,6 +59,8 @@ function MagneticIcon({
       ref={ref}
       href={href}
       aria-label={label}
+      target={isExternal ? "_blank" : undefined}
+      rel={isExternal ? "noopener noreferrer" : undefined}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
       style={{ x: springX, y: springY }}
