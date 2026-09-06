@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "");
-
+// Don't initialize Stripe eagerly at the module level!
+// Just define the interface.
 interface CheckoutItem { id: string; name: string; price: number; quantity: number; }
 
 export async function POST(req: NextRequest) {
+  // Check for the key FIRST before trying to initialize Stripe
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ error: "Stripe is not configured on the server." }, { status: 500 });
   }
+
+  // Initialize it safely inside the function
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
   try {
     const { items } = (await req.json()) as { items: CheckoutItem[] };
     if (!items?.length) return NextResponse.json({ error: "Your cart is empty." }, { status: 400 });
