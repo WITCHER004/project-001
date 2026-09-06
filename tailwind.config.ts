@@ -9,15 +9,17 @@ const config: Config = {
     extend: {
       colors: {
         // Core brand system (source of truth: app/globals.css + app/layout.tsx)
+        // Re-tuned for a richer, classier dark register: warm near-black instead
+        // of navy, antique gold instead of neon lime, oxblood instead of coral.
         ink: {
-          DEFAULT: "#0F1226",
-          800: "#171A38", // card / pinboard surfaces
-          700: "#23264A", // hairline borders
+          DEFAULT: "#0B0A08",
+          800: "#16130F", // card / pinboard surfaces
+          700: "#2E2717", // hairline borders, warm bronze undertone
         },
-        paper: "#F6F4EC",
-        lime: "#C6F135",
-        coral: "#FF6A4D",
-        slate: "#93A0C2",
+        paper: "#F3ECDC", // warm ivory, not stark white
+        lime: "#C9A227", // antique gold — kept the key name so components didn't need touching
+        coral: "#8B3A3A", // oxblood — used for small tags/accents
+        slate: "#B0A38E", // warm taupe for muted text, replaces cool blue-gray
 
         // Luxury black & grays (legacy — still used by Hero/Shop/About,
         // kept so those sections don't break; not for new work)
@@ -26,9 +28,9 @@ const config: Config = {
         "gray-900": "#1a1a1a",
         "gray-850": "#2a2a2a",
         "gray-800": "#3a3a3a",
-        "yellow-gold": "#d4af37",
-        "amber-dark": "#8B4513",
-        "gold-light": "#e8d4a0",
+        "yellow-gold": "#C9A227",
+        "amber-dark": "#5C3A1E",
+        "gold-light": "#E8D9B0",
       },
       fontFamily: {
         display: ["var(--font-fraunces)", "serif"],
@@ -39,15 +41,15 @@ const config: Config = {
       backgroundImage: {
         "noise": "url('/noise.png')",
         "grain": "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 seed=%222%22 /%3E%3C/filter%3E%3Crect width=%22100%22 height=%22100%22 filter=%22url(%23noise)%22 opacity=%220.02%22/%3E%3C/svg%3E')",
-        "gradient-gold": "linear-gradient(135deg, #d4af37 0%, #e8d4a0 100%)",
+        "gradient-gold": "linear-gradient(135deg, #C9A227 0%, #E8D9B0 100%)",
       },
       backdropBlur: {
         xs: "2px",
       },
       boxShadow: {
-        "glow": "0 0 30px rgba(212, 175, 55, 0.3)",
-        "glow-lg": "0 0 60px rgba(212, 175, 55, 0.4)",
-        "gold-lg": "0 0 50px rgba(212, 175, 55, 0.3), 0 0 100px rgba(212, 175, 55, 0.15)",
+        "glow": "0 0 30px rgba(201, 162, 39, 0.25)",
+        "glow-lg": "0 0 60px rgba(201, 162, 39, 0.35)",
+        "gold-lg": "0 0 50px rgba(201, 162, 39, 0.25), 0 0 100px rgba(201, 162, 39, 0.12)",
       },
       keyframes: {
         "float": {
