@@ -8,21 +8,33 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Luxury black & grays
+        // Core brand system (source of truth: app/globals.css + app/layout.tsx)
+        ink: {
+          DEFAULT: "#0F1226",
+          800: "#171A38", // card / pinboard surfaces
+          700: "#23264A", // hairline borders
+        },
+        paper: "#F6F4EC",
+        lime: "#C6F135",
+        coral: "#FF6A4D",
+        slate: "#93A0C2",
+
+        // Luxury black & grays (legacy — still used by Hero/Shop/About,
+        // kept so those sections don't break; not for new work)
         "black": "#000000",
         "gray-950": "#0a0a0a",
         "gray-900": "#1a1a1a",
         "gray-850": "#2a2a2a",
         "gray-800": "#3a3a3a",
-        
-        // Gold luxury accents
         "yellow-gold": "#d4af37",
         "amber-dark": "#8B4513",
         "gold-light": "#e8d4a0",
       },
       fontFamily: {
-        serif: ["Fraunces", "serif"],
-        sans: ["Inter", "sans-serif"],
+        display: ["var(--font-fraunces)", "serif"],
+        body: ["var(--font-general)", "sans-serif"],
+        serif: ["var(--font-fraunces)", "serif"],
+        sans: ["var(--font-general)", "sans-serif"],
       },
       backgroundImage: {
         "noise": "url('/noise.png')",

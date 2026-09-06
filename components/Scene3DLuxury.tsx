@@ -258,9 +258,41 @@ function InstancedFallingField({
   );
 }
 
-function CinematicScene({ budget }: { budget: SceneBudget }) {
+// Tracks normalized document scroll (0-1) outside the R3F tree, since
+// scroll listeners belong on `window`, not inside the canvas.
+function useScrollProgress() {
+  const progress = useRef(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      progress.current = max > 0 ? window.scrollY / max : 0;
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return progress;
+}
+
+function ScrollParallaxGroup({ children, disabled }: { children: React.ReactNode; disabled: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const scrollProgress = useScrollProgress();
+
+  useFrame((_, delta) => {
+    if (disabled || !groupRef.current) return;
+    // Gentle rotation across the full scroll range — a few degrees, not a spin.
+    const targetY = scrollProgress.current * 0.35;
+    const targetX = scrollProgress.current * -0.12;
+    groupRef.current.rotation.y = THREE.MathUtils.damp(groupRef.current.rotation.y, targetY, 4, delta);
+    groupRef.current.rotation.x = THREE.MathUtils.damp(groupRef.current.rotation.x, targetX, 4, delta);
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+}
+
+function CinematicScene({ budget, reducedMotion }: { budget: SceneBudget; reducedMotion: boolean }) {
   return (
-    <group>
+    <ScrollParallaxGroup disabled={reducedMotion}>
       <InstancedFallingField kind="chip" count={budget.chips} castShadow={budget.shadows} geometryDetail={budget.geometryDetail} />
       <InstancedFallingField kind="coke" count={budget.cokes} castShadow={budget.shadows} geometryDetail={budget.geometryDetail} />
       <InstancedFallingField kind="popcorn" count={budget.popcorn} castShadow={budget.shadows} geometryDetail={budget.geometryDetail} />
@@ -282,7 +314,7 @@ function CinematicScene({ budget }: { budget: SceneBudget }) {
       <pointLight position={[10, 8, -5]} intensity={0.8} color="#CC0000" />
       <pointLight position={[0, 5, -10]} intensity={0.6} color="#4A7BA7" />
       <pointLight position={[5, 10, 8]} intensity={0.7} color="#FFD700" />
-    </group>
+    </ScrollParallaxGroup>
   );
 }
 
@@ -337,7 +369,7 @@ export default function Scene3DUltraCinematic() {
         className="w-full h-full"
       >
         <Suspense fallback={null}>
-          <CinematicScene budget={effectiveBudget} />
+          <CinematicScene budget={effectiveBudget} reducedMotion={prefersReducedMotion} />
 
           {(effectiveBudget.bloom || effectiveBudget.depthOfField) && (
             <EffectComposer>

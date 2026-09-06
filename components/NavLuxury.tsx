@@ -40,7 +40,7 @@ export default function NavLuxury() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         solid
-          ? "bg-black/80 backdrop-blur-2xl border-b border-yellow-600/15 shadow-2xl"
+          ? "bg-ink/85 backdrop-blur-2xl border-b border-ink-700 shadow-2xl"
           : "bg-transparent"
       }`}
     >
@@ -49,10 +49,23 @@ export default function NavLuxury() {
         <motion.a
           href="#top"
           whileHover={{ scale: 1.05 }}
-          className="font-serif text-3xl font-light tracking-tight text-white"
+          className="flex items-center gap-3"
         >
-          GRABBO
-          <span className="text-yellow-500">.</span>
+          <span className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-lime/30">
+            <Image
+              src="/logo.jpg"
+              alt="Grabbo"
+              fill
+              sizes="36px"
+              // grayscale keeps the mark from fighting the ink/paper/lime system;
+              // the lime ring above is what carries the brand accent instead.
+              className="object-cover grayscale contrast-125 mix-blend-luminosity"
+            />
+          </span>
+          <span className="font-display text-2xl font-light tracking-tight text-paper">
+            GRABBO
+            <span className="text-lime">.</span>
+          </span>
         </motion.a>
 
         {/* Desktop Links */}
@@ -61,7 +74,7 @@ export default function NavLuxury() {
             <motion.li key={link.href} whileHover={{ y: -2 }}>
               <a
                 href={link.href}
-                className="text-sm font-semibold text-gray-300 hover:text-yellow-500 transition-colors duration-300 uppercase tracking-wider"
+                className="text-sm font-semibold text-paper/70 hover:text-lime transition-colors duration-300 uppercase tracking-wider"
               >
                 {link.label}
               </a>
@@ -76,16 +89,15 @@ export default function NavLuxury() {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
             onClick={toggleCart}
-            className="relative p-4 rounded-lg bg-yellow-600/10 border border-yellow-600/30 hover:border-yellow-600/60 text-yellow-500 transition-all hover:bg-yellow-600/20"
+            className="relative p-4 rounded-lg bg-lime/10 border border-lime/25 hover:border-lime/50 text-lime transition-all hover:bg-lime/15"
           >
             <ShoppingBag size={22} />
-            
-            {/* 3. UPDATED: Added isMounted to the cart badge logic */}
+
             {isMounted && itemCount > 0 && (
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-600 to-amber-600 text-white text-xs font-bold rounded-full flex items-center justify-center"
+                className="absolute -top-2 -right-2 w-6 h-6 bg-lime text-ink text-xs font-bold rounded-full flex items-center justify-center"
               >
                 {itemCount}
               </motion.span>
@@ -97,7 +109,7 @@ export default function NavLuxury() {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-4 rounded-lg hover:bg-yellow-600/10 text-yellow-500"
+            className="md:hidden p-4 rounded-lg hover:bg-lime/10 text-lime"
           >
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </motion.button>
@@ -112,16 +124,16 @@ export default function NavLuxury() {
           height: mobileMenuOpen ? "auto" : 0,
         }}
         transition={{ duration: 0.3 }}
-        className="md:hidden overflow-hidden border-t border-yellow-600/15"
+        className="md:hidden overflow-hidden border-t border-ink-700"
       >
-        <div className="bg-black/95 backdrop-blur-xl p-6">
+        <div className="bg-ink/95 backdrop-blur-xl p-6">
           <ul className="space-y-4">
             {links.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-semibold text-gray-300 hover:text-yellow-500 transition-colors block uppercase tracking-wider"
+                  className="text-sm font-semibold text-paper/70 hover:text-lime transition-colors block uppercase tracking-wider"
                 >
                   {link.label}
                 </a>
