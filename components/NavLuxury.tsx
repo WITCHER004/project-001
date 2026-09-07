@@ -1,31 +1,38 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ShoppingBag, Menu, X } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
-import Image from "next/image"; 
+import Image from "next/image";
 
-const links = [
-  { label: "Home", href: "#top" },
-  { label: "Shop", href: "#shop" },
-  { label: "About", href: "#about" },
-  { label: "Events", href: "#events" },
-  { label: "Testimonials", href: "#testimonials" },
+interface NavLink {
+  label: string;
+  href: string;
+  /** Only route-based links (not in-page anchors) get active-state tracking. */
+  trackActive?: boolean;
+}
+
+const links: NavLink[] = [
+  { label: "Home", href: "/", trackActive: true },
+  { label: "Shop", href: "/shop", trackActive: true },
+  { label: "About", href: "/#about" },
+  { label: "Events", href: "/events", trackActive: true },
+  { label: "Testimonials", href: "/#testimonials" },
 ];
 
 export default function NavLuxury() {
   const [solid, setSolid] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // 1. ADDED: Hydration check state
   const [isMounted, setIsMounted] = useState(false);
+  const pathname = usePathname();
 
   const getItemCount = useCartStore((state) => state.getItemCount);
   const toggleCart = useCartStore((state) => state.toggleCart);
   const itemCount = getItemCount();
 
-  // 2. ADDED: Tell React the component has mounted in the browser
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -35,6 +42,18 @@ export default function NavLuxury() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close the mobile menu automatically on route change so it never sits
+  // open over the newly transitioned page.
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  const isActive = (link: NavLink) => {
+    if (!link.trackActive) return false;
+    if (link.href === "/") return pathname === "/";
+    return pathname === link.href || pathname.startsWith(`${link.href}/`);
+  };
 
   return (
     <header
@@ -46,43 +65,48 @@ export default function NavLuxury() {
     >
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 lg:px-16 py-5 sm:py-6">
         {/* Logo */}
-        <motion.a
-          href="#top"
-          whileHover={{ scale: 1.05 }}
-          className="flex items-center gap-3"
-        >
-          <span className="relative w-9 h-9 flex-shrink-0 drop-shadow-[0_2px_8px_rgba(201,162,39,0.45)]">
-            <Image
-              src="/logo.jpg"
-              alt="Grabbo"
-              fill
-              sizes="36px"
-              // True brand colors now show through — grounded in the dark
-              // navbar with a warm gold-tinted drop-shadow (on the wrapping
-              // span, not the image, so overflow-hidden doesn't clip it)
-              // instead of the grayscale/blend filter that was suppressing
-              // the logo's own colors.
-              className="object-cover rounded-full ring-1 ring-lime/20"
-            />
-          </span>
-          <span className="font-display text-2xl font-light tracking-tight text-paper">
-            GRABBO
-            <span className="text-lime">.</span>
-          </span>
-        </motion.a>
+        <Link href="/" className="flex items-center gap-3">
+          <motion.span whileHover={{ scale: 1.05 }} className="flex items-center gap-3">
+            <span className="relative w-9 h-9 flex-shrink-0 drop-shadow-[0_2px_8px_rgba(201,162,39,0.45)]">
+              <Image
+                src="/logo.jpg"
+                alt="Grabbo"
+                fill
+                sizes="36px"
+                className="object-cover rounded-full ring-1 ring-lime/20"
+              />
+            </span>
+            <span className="font-display text-2xl font-light tracking-tight text-paper">
+              GRABBO
+              <span className="text-lime">.</span>
+            </span>
+          </motion.span>
+        </Link>
 
         {/* Desktop Links */}
         <ul className="hidden md:flex items-center gap-10">
-          {links.map((link) => (
-            <motion.li key={link.href} whileHover={{ y: -2 }}>
-              <a
-                href={link.href}
-                className="text-sm font-semibold text-paper/70 hover:text-lime transition-colors duration-300 uppercase tracking-wider"
-              >
-                {link.label}
-              </a>
-            </motion.li>
-          ))}
+          {links.map((link) => {
+            const active = isActive(link);
+            return (
+              <motion.li key={link.href} whileHover={{ y: -2 }} className="relative">
+                <Link
+                  href={link.href}
+                  className={`relative text-sm font-semibold uppercase tracking-wider transition-colors duration-300 pb-1 ${
+                    active ? "text-paper" : "text-paper/70 hover:text-lime"
+                  }`}
+                >
+                  {link.label}
+                  {active && (
+                    <motion.span
+                      layoutId="nav-underline"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      className="absolute left-0 right-0 -bottom-0.5 h-[2px] bg-lime rounded-full"
+                    />
+                  )}
+                </Link>
+              </motion.li>
+            );
+          })}
         </ul>
 
         {/* Right Section */}
@@ -112,6 +136,7 @@ export default function NavLuxury() {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             className="md:hidden p-4 rounded-lg hover:bg-lime/10 text-lime"
           >
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -131,17 +156,22 @@ export default function NavLuxury() {
       >
         <div className="bg-ink/95 backdrop-blur-xl p-6">
           <ul className="space-y-4">
-            {links.map((link) => (
-              <li key={link.href}>
-                <a
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-semibold text-paper/70 hover:text-lime transition-colors block uppercase tracking-wider"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
+            {links.map((link) => {
+              const active = isActive(link);
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-sm font-semibold transition-colors block uppercase tracking-wider ${
+                      active ? "text-lime" : "text-paper/70 hover:text-lime"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </motion.div>

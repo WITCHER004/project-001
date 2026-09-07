@@ -1,37 +1,94 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { CloudRain, ShieldAlert, Megaphone, Sparkles, RefreshCw } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  CloudSun,
+  Library,
+  UtensilsCrossed,
+  Megaphone,
+  RefreshCw,
+  Wind,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import type { AdvisoryItem } from "@/app/api/advisory/route";
+import type { ConciergePayload } from "@/app/api/advisory/route";
 
-const ICONS: Record<AdvisoryItem["kind"], typeof CloudRain> = {
-  weather: CloudRain,
-  campus: ShieldAlert,
-  advisory: Megaphone,
-  lifestyle: Sparkles,
+const LUXURY_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+// Shown immediately if the feed fails to load, so the dashboard never goes
+// empty — clearly labelled as cached rather than live.
+const FALLBACK_PAYLOAD: ConciergePayload = {
+  campus: "K.R. Mangalam University, Sohna Road, Gurugram",
+  generatedAt: new Date().toISOString(),
+  weather: {
+    location: "Gurugram, NCR",
+    tempC: 32,
+    feelsLikeC: 34,
+    condition: "Clear",
+    aqi: 140,
+    advice: "Briefing is warming up — showing the last known snapshot instead.",
+  },
+  cafeteria: {
+    hall: "Cafeteria Block A",
+    meal: "Today",
+    items: ["Menu refreshing…"],
+    nextUpdate: "Check back shortly",
+  },
+  library: {
+    block: "Central Library",
+    seatsAvailable: 0,
+    seatsTotal: 220,
+    busiestWindow: "—",
+  },
+  advisories: [
+    {
+      id: "fallback-1",
+      tag: "Campus Notice",
+      title: "Live briefing is warming up",
+      body: "We couldn't reach the briefing feed just now — here's the last known update instead.",
+    },
+  ],
 };
 
-// Shown immediately if the feed fails to load, so the section never goes
-// empty — clearly labelled as cached rather than live.
-const FALLBACK_ITEMS: AdvisoryItem[] = [
-  {
-    id: "fallback-1",
-    kind: "campus",
-    tag: "Campus notice",
-    title: "Live briefing is warming up",
-    body: "We couldn't reach the briefing feed just now — here's the last known update instead.",
-    generatedAt: new Date().toISOString(),
-  },
-];
+function aqiTone(aqi: number) {
+  if (aqi <= 100) return { label: "Good", classes: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" };
+  if (aqi <= 150) return { label: "Moderate", classes: "bg-lime/15 text-lime border-lime/25" };
+  return { label: "Poor", classes: "bg-coral/15 text-coral border-coral/25" };
+}
 
-function AdvisorySkeletonCard() {
+function ConciergeCardShell({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: typeof CloudSun;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.6, ease: LUXURY_EASE }}
+      className="bg-ink border hairline rounded-2xl p-6 flex flex-col"
+    >
+      <div className="flex items-center gap-2.5 mb-5">
+        <div className="w-9 h-9 rounded-full bg-lime/15 flex items-center justify-center flex-shrink-0">
+          <Icon size={16} className="text-lime" />
+        </div>
+        <p className="text-xs text-slate uppercase tracking-wide font-medium">{label}</p>
+      </div>
+      <div className="flex-1">{children}</div>
+    </motion.div>
+  );
+}
+
+function ConciergeSkeletonCard() {
   return (
     <div className="bg-ink border hairline rounded-2xl p-6 relative overflow-hidden">
-      <div className="w-10 h-10 rounded-full bg-lime/10 mb-5" />
-      <div className="h-3 w-20 rounded bg-lime/15 mb-3" />
-      <div className="h-5 w-4/5 rounded bg-paper/10 mb-2" />
-      <div className="h-5 w-3/5 rounded bg-paper/10 mb-4" />
+      <div className="w-9 h-9 rounded-full bg-lime/10 mb-5" />
+      <div className="h-8 w-2/3 rounded bg-paper/10 mb-3" />
       <div className="h-3 w-full rounded bg-paper/5 mb-2" />
       <div className="h-3 w-5/6 rounded bg-paper/5" />
       {/* Gold sheen sweep — reads as "the model is drafting this" rather
@@ -47,7 +104,7 @@ function AdvisorySkeletonCard() {
 }
 
 export default function Advisory() {
-  const [items, setItems] = useState<AdvisoryItem[] | null>(null);
+  const [data, setData] = useState<ConciergePayload | null>(null);
   const [failed, setFailed] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
@@ -58,13 +115,13 @@ export default function Advisory() {
       try {
         const res = await fetch("/api/advisory");
         if (!res.ok) throw new Error(`Advisory feed returned ${res.status}`);
-        const data = await res.json();
+        const payload: ConciergePayload = await res.json();
         if (cancelled) return;
-        setItems(data.items);
+        setData(payload);
         setUpdatedAt(new Date());
       } catch {
         if (cancelled) return;
-        setItems(FALLBACK_ITEMS);
+        setData(FALLBACK_PAYLOAD);
         setFailed(true);
       }
     }
@@ -75,10 +132,13 @@ export default function Advisory() {
     };
   }, []);
 
-  const isLoading = items === null;
+  const isLoading = data === null;
+  const occupancyPct = data ? Math.round((1 - data.library.seatsAvailable / data.library.seatsTotal) * 100) : 0;
+  const aqi = data ? aqiTone(data.weather.aqi) : aqiTone(0);
+
   const tickerText = isLoading
     ? ["Loading live briefing…"]
-    : items.map((i) => i.title);
+    : data.advisories.map((a) => a.title);
 
   return (
     <section id="advisories" className="pinboard py-20 sm:py-28">
@@ -91,17 +151,20 @@ export default function Advisory() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-lime" />
               </span>
               <p className="text-lime font-medium text-sm uppercase tracking-wide">
-                Live Campus Briefing
+                Smart Campus Concierge · Predictive
               </p>
             </div>
-            <h2 className="font-display text-3xl sm:text-4xl">
-              Advisories, posted before you need them.
+            <h2 className="font-display text-3xl sm:text-4xl mb-2">
+              Everything your campus needs you to know, before you ask.
             </h2>
+            <p className="text-slate text-sm">
+              {isLoading ? "Syncing campus feeds…" : data.campus}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-slate max-w-xs text-sm mb-2">
-              Weather shifts, water cuts, mess changes — auto-drafted the
-              moment something changes on campus.
+              Weather, mess menus, library seats, and campus notices — drafted
+              the moment something changes.
             </p>
             {updatedAt && !failed && (
               <p className="flex items-center justify-end gap-1.5 text-xs text-slate/60">
@@ -109,55 +172,98 @@ export default function Advisory() {
                 Updated {updatedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </p>
             )}
-            {failed && (
-              <p className="text-xs text-coral/80">Showing cached briefing</p>
-            )}
+            {failed && <p className="text-xs text-coral/80">Showing cached briefing</p>}
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <AnimatePresence mode="wait">
-            {isLoading ? (
-              <motion.div
-                key="skeleton"
-                exit={{ opacity: 0 }}
-                className="contents"
-              >
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <AdvisorySkeletonCard key={i} />
-                ))}
-              </motion.div>
-            ) : (
-              items.map((a, i) => {
-                const Icon = ICONS[a.kind];
-                return (
+        {/* Modular grid — weather / cafeteria / library, each a distinct
+            RAG-fillable slot rather than a generic feed item. */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => <ConciergeSkeletonCard key={i} />)
+          ) : (
+            <>
+              <ConciergeCardShell icon={CloudSun} label="Weather · Live">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <p className="font-display text-4xl text-paper">{data.weather.tempC}°</p>
+                  <p className="text-slate text-sm">feels {data.weather.feelsLikeC}°</p>
+                </div>
+                <p className="text-paper/80 text-sm mb-3">
+                  {data.weather.condition} · {data.weather.location}
+                </p>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border mb-3 ${aqi.classes}`}
+                >
+                  <Wind size={11} />
+                  AQI {data.weather.aqi} · {aqi.label}
+                </span>
+                <p className="text-slate text-sm leading-relaxed">{data.weather.advice}</p>
+              </ConciergeCardShell>
+
+              <ConciergeCardShell icon={Library} label="Library · Seating">
+                <div className="flex items-baseline gap-2 mb-3">
+                  <p className="font-display text-4xl text-paper">{data.library.seatsAvailable}</p>
+                  <p className="text-slate text-sm">/ {data.library.seatsTotal} seats open</p>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-ink-700 overflow-hidden mb-3">
                   <motion.div
-                    key={a.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                    className="bg-ink border hairline rounded-2xl p-6 relative"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-lime/15 flex items-center justify-center mb-5">
-                      <Icon size={18} className="text-lime" />
-                    </div>
-                    <p className="text-xs text-coral font-medium mb-2 uppercase tracking-wide">
-                      {a.tag}
-                    </p>
-                    <h3 className="font-display text-xl mb-3 leading-snug">
-                      {a.title}
-                    </h3>
-                    <p className="text-slate text-sm mb-5">{a.body}</p>
-                    <p className="text-xs text-slate/70">Auto-published</p>
-                  </motion.div>
-                );
-              })
-            )}
-          </AnimatePresence>
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${occupancyPct}%` }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1, ease: LUXURY_EASE }}
+                    className={`h-full rounded-full ${occupancyPct > 80 ? "bg-coral" : "bg-lime"}`}
+                  />
+                </div>
+                <p className="text-paper/80 text-sm mb-1">{data.library.block}</p>
+                <p className="flex items-center gap-1.5 text-slate text-sm leading-relaxed">
+                  <Users size={12} className="text-lime flex-shrink-0" />
+                  Busiest: {data.library.busiestWindow}
+                </p>
+              </ConciergeCardShell>
+
+              <ConciergeCardShell icon={UtensilsCrossed} label="Cafeteria · Menu">
+                <p className="text-paper/80 text-sm mb-1">{data.cafeteria.hall}</p>
+                <p className="text-xs text-lime uppercase tracking-wide mb-3">{data.cafeteria.meal}</p>
+                <ul className="space-y-1.5 mb-4">
+                  {data.cafeteria.items.map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-sm text-paper/70">
+                      <span className="w-1 h-1 rounded-full bg-lime flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-slate text-xs">{data.cafeteria.nextUpdate}</p>
+              </ConciergeCardShell>
+            </>
+          )}
         </div>
+
+        {/* Campus advisories — the general notices/weather/shuttle alerts,
+            kept as compact cards below the three headline modules. */}
+        {!isLoading && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            {data.advisories.map((a, i) => (
+              <motion.div
+                key={a.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5, ease: LUXURY_EASE, delay: i * 0.08 }}
+                className="bg-ink-800/40 border hairline rounded-2xl p-5"
+              >
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Megaphone size={14} className="text-coral flex-shrink-0" />
+                  <p className="text-xs text-coral font-medium uppercase tracking-wide">{a.tag}</p>
+                </div>
+                <h3 className="font-display text-base text-paper mb-1.5 leading-snug">{a.title}</h3>
+                <p className="text-slate text-sm leading-relaxed">{a.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* continuous ticker of headlines, driven by whatever's currently loaded */}
+      {/* Continuous ticker of headlines, driven by whatever's currently loaded */}
       <div className="mt-14 sm:mt-16 border-y hairline py-4 overflow-hidden">
         <div className="flex gap-10 animate-[scroll_28s_linear_infinite] whitespace-nowrap w-max">
           {[...tickerText, ...tickerText].map((t, i) => (

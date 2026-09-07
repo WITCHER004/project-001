@@ -1,63 +1,108 @@
 import { NextResponse } from "next/server";
 
-export interface AdvisoryItem {
+export interface WeatherSnapshot {
+  location: string;
+  tempC: number;
+  feelsLikeC: number;
+  condition: string;
+  aqi: number;
+  advice: string;
+}
+
+export interface CafeteriaUpdate {
+  hall: string;
+  meal: string;
+  items: string[];
+  nextUpdate: string;
+}
+
+export interface LibraryStatus {
+  block: string;
+  seatsAvailable: number;
+  seatsTotal: number;
+  busiestWindow: string;
+}
+
+export interface CampusAdvisory {
   id: string;
-  kind: "weather" | "campus" | "advisory" | "lifestyle";
   tag: string;
   title: string;
   body: string;
+}
+
+export interface ConciergePayload {
+  campus: string;
   generatedAt: string; // ISO timestamp
+  weather: WeatherSnapshot;
+  cafeteria: CafeteriaUpdate;
+  library: LibraryStatus;
+  advisories: CampusAdvisory[];
 }
 
 /**
  * MOCK endpoint standing in for a real RAG pipeline. In production this
- * would: 1) pull fresh signals (campus notice boards, a weather API, mess
- * menu changes, AQI feeds), 2) retrieve the relevant snippets, and 3) ask an
- * LLM to draft short, on-brand copy from them — then cache the result for a
- * few minutes so every visitor isn't triggering a fresh generation.
+ * would: 1) pull fresh signals per module (a weather API, the cafeteria
+ * POS/menu system, the library's seat-booking system, campus notice
+ * boards), 2) retrieve the relevant snippets per module, and 3) ask an LLM
+ * to draft short, on-brand copy from them (the `advice` and `body` fields
+ * below are exactly the kind of thing that gets generated) — then cache
+ * the result for a few minutes so every visitor isn't triggering a fresh
+ * generation.
  *
- * The artificial delay below exists only so the skeleton state in
- * Advisory.tsx is actually visible in this demo; a real cached response
- * would typically return in well under 100ms.
+ * Data below is illustrative and scoped to K.R. Mangalam University,
+ * Sohna Road, Gurugram — swap for the real campus once this ships.
+ *
+ * The artificial delay exists only so the skeleton state in Advisory.tsx
+ * is visible in this demo; a real cached response would typically return
+ * in well under 100ms.
  */
 export async function GET() {
   await new Promise((r) => setTimeout(r, 900));
 
-  const now = new Date().toISOString();
-  const items: AdvisoryItem[] = [
-    {
-      id: "weather-rain",
-      kind: "weather",
-      tag: "Weather",
-      title: "Heavy rain expected after 6pm today",
-      body: "Delivery riders will switch to covered routes. Orders placed after 5:30pm may run 15–20 minutes longer.",
-      generatedAt: now,
+  const payload: ConciergePayload = {
+    campus: "K.R. Mangalam University, Sohna Road, Gurugram",
+    generatedAt: new Date().toISOString(),
+    weather: {
+      location: "Gurugram, NCR",
+      tempC: 34,
+      feelsLikeC: 37,
+      condition: "Hazy sunshine",
+      aqi: 168,
+      advice: "AQI is trending into the 'moderate–poor' band — keep evening ground sessions short.",
     },
-    {
-      id: "campus-water",
-      kind: "campus",
-      tag: "Campus notice",
-      title: "Block C water supply maintenance",
-      body: "Water will be shut off in Block C from 11am–2pm tomorrow. Stock up at the Grabbo store before 10:45am.",
-      generatedAt: now,
+    cafeteria: {
+      hall: "Cafeteria Block A",
+      meal: "Dinner",
+      items: ["Rajma Chawal", "Paneer Bhurji Wrap", "Cold Coffee Bar", "Live Dosa Counter"],
+      nextUpdate: "Late Night Menu unlocks at 9:00 PM",
     },
-    {
-      id: "aqi-week",
-      kind: "advisory",
-      tag: "Advisory",
-      title: "Air quality dipping this week",
-      body: "AQI is trending into the 'moderate' band. Evening outdoor sports sessions are best kept short.",
-      generatedAt: now,
+    library: {
+      block: "Central Library — 2nd Floor Reading Room",
+      seatsAvailable: 42,
+      seatsTotal: 220,
+      busiestWindow: "7–9 PM this week (mid-sem prep)",
     },
-    {
-      id: "late-night-tip",
-      kind: "lifestyle",
-      tag: "Lifestyle",
-      title: "Midterm week: the library is filling by 8pm",
-      body: "If you need a quiet table after dinner, get there before 8 — the Late Night Menu delivers straight to the reading rooms.",
-      generatedAt: now,
-    },
-  ];
+    advisories: [
+      {
+        id: "water-block-c",
+        tag: "Campus Notice",
+        title: "Block C water supply maintenance",
+        body: "Water will be shut off in Block C from 11am–2pm tomorrow. Stock up at the Grabbo store before 10:45am.",
+      },
+      {
+        id: "rain-evening",
+        tag: "Weather",
+        title: "Light showers expected after 6pm",
+        body: "Delivery riders will switch to covered routes — orders placed after 5:30pm may run 10–15 minutes longer.",
+      },
+      {
+        id: "shuttle-window",
+        tag: "Advisory",
+        title: "Shuttle timing shifted for exam week",
+        body: "The Sohna Road metro shuttle now runs every 20 minutes, 7am–11pm, through the exam period.",
+      },
+    ],
+  };
 
-  return NextResponse.json({ items });
+  return NextResponse.json(payload);
 }

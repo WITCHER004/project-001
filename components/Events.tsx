@@ -6,10 +6,7 @@ import { useRef, useState } from "react";
 
 const LUXURY_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-const APP_STORE_FALLBACK = "https://apps.apple.com/app/grabbo"; // TODO: real listing
-const PLAY_STORE_FALLBACK = "https://play.google.com/store/apps/details?id=com.grabbo"; // TODO: real listing
-
-interface LuxuryEvent {
+export interface LuxuryEvent {
   id: string;
   date: { day: string; month: string };
   title: string;
@@ -20,7 +17,7 @@ interface LuxuryEvent {
   tag: string;
 }
 
-const events: LuxuryEvent[] = [
+export const events: LuxuryEvent[] = [
   {
     id: "midnight-tasting",
     date: { day: "14", month: "SEP" },
@@ -71,9 +68,11 @@ const events: LuxuryEvent[] = [
  */
 function grabSpot(eventId: string) {
   const deepLink = `grabbo://events?eventId=${encodeURIComponent(eventId)}`;
-  const fallback = /android/i.test(navigator.userAgent)
-    ? PLAY_STORE_FALLBACK
-    : APP_STORE_FALLBACK;
+  // If the app never takes focus (not installed / desktop browser), route
+  // to our own gateway rather than guessing a single store link — it shows
+  // the right badge/QR for the visitor's device and can retry this exact
+  // RSVP deep link once the app is installed.
+  const fallback = `/download?target=${encodeURIComponent(deepLink)}`;
 
   const fallbackTimer = setTimeout(() => {
     window.location.href = fallback;
@@ -82,7 +81,7 @@ function grabSpot(eventId: string) {
   window.location.href = deepLink;
 }
 
-function EventCard({ event, index }: { event: LuxuryEvent; index: number }) {
+export function EventCard({ event, index }: { event: LuxuryEvent; index: number }) {
   const qrTarget = `grabbo://events?eventId=${encodeURIComponent(event.id)}`;
   // Public, key-less QR generator — fine for a visual placeholder; swap for
   // a self-hosted generator if uptime/privacy of a third party is a concern.

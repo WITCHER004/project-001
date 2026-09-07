@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import { ArrowDownRight, Moon, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +12,12 @@ const Scene3DLuxury = dynamic(() => import("./Scene3DLuxury"), {
   ssr: false,
   loading: () => <div className="w-full h-[100dvh] bg-ink" />,
 });
+
+// Next's <Link> and framer-motion's <motion.a> both want to own the
+// underlying <a> tag, so they're merged into one component instead of
+// nesting two anchors — keeps the client-side routing and the hover/tap
+// animations both working on the same element.
+const MotionLink = motion(Link);
 
 export default function HeroUltraCinematic() {
   const [isClient, setIsClient] = useState(false);
@@ -155,15 +162,15 @@ export default function HeroUltraCinematic() {
               </p>
 
               <div className="flex flex-wrap items-center gap-5 mb-16">
-                <motion.a
-                  href="#shop"
+                <MotionLink
+                  href="/shop"
                   whileHover={{ y: -4, boxShadow: "0 0 40px rgba(201,162,39,0.35)" }}
                   whileTap={{ scale: 0.95 }}
                   className="group inline-flex items-center gap-3 bg-lime text-ink font-bold px-8 py-4 rounded-xl shadow-2xl hover:shadow-gold-lg transition-all duration-300"
                 >
                   {lateNight ? "Order Late Night Menu" : "Explore Now"}
                   <ArrowDownRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={20} />
-                </motion.a>
+                </MotionLink>
 
                 <motion.a
                   href="#about"

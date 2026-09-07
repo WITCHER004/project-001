@@ -7,9 +7,6 @@ import { useEffect, useState } from "react";
 import { useDrawerSwooshSound } from "@/hooks/useDrawerSwooshSound";
 import { useAddToCartSound } from "@/hooks/useAddToCartSound";
 
-const APP_STORE_FALLBACK = "https://apps.apple.com/app/grabbo"; // TODO: real listing
-const PLAY_STORE_FALLBACK = "https://play.google.com/store/apps/details?id=com.grabbo"; // TODO: real listing
-
 export default function CartDrawerLuxury() {
   const {
     items,
@@ -57,11 +54,12 @@ export default function CartDrawerLuxury() {
     };
     const encoded = encodeURIComponent(btoa(JSON.stringify(cartPayload)));
     const deepLink = `grabbo://checkout/pay?cart=${encoded}`;
-    const fallback = /android/i.test(navigator.userAgent)
-      ? PLAY_STORE_FALLBACK
-      : APP_STORE_FALLBACK;
 
-    // Try the app first; if it's not installed, land on the store after a beat.
+    // Try the app first; if it never takes focus (not installed), land on
+    // our own /download gateway rather than guessing a single store link —
+    // the gateway shows the right badge/QR based on the visitor's device,
+    // and can retry this exact deep link once the app is installed.
+    const fallback = `/download?target=${encodeURIComponent(deepLink)}`;
     const fallbackTimer = setTimeout(() => {
       window.location.href = fallback;
     }, 1200);
