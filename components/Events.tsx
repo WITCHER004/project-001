@@ -1,10 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPin, Clock, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
-import { useRef } from "react";
+import { MapPin, Clock, ArrowLeft, ArrowRight, Sparkles, Smartphone } from "lucide-react";
+import { useRef, useState } from "react";
 
 const LUXURY_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const APP_STORE_FALLBACK = "https://apps.apple.com/app/grabbo"; // TODO: real listing
+const PLAY_STORE_FALLBACK = "https://play.google.com/store/apps/details?id=com.grabbo"; // TODO: real listing
 
 interface LuxuryEvent {
   id: string;
@@ -60,7 +63,31 @@ const events: LuxuryEvent[] = [
   },
 ];
 
+/**
+ * Attempts the Expo/React Native deep link straight into the event's
+ * ticket-booking view, bypassing the app's home screen entirely. Falls back
+ * to the appropriate app store if the app isn't installed (or the user is
+ * on desktop, where the deep link can't resolve at all).
+ */
+function grabSpot(eventId: string) {
+  const deepLink = `grabbo://events?eventId=${encodeURIComponent(eventId)}`;
+  const fallback = /android/i.test(navigator.userAgent)
+    ? PLAY_STORE_FALLBACK
+    : APP_STORE_FALLBACK;
+
+  const fallbackTimer = setTimeout(() => {
+    window.location.href = fallback;
+  }, 1200);
+  window.addEventListener("blur", () => clearTimeout(fallbackTimer), { once: true });
+  window.location.href = deepLink;
+}
+
 function EventCard({ event, index }: { event: LuxuryEvent; index: number }) {
+  const qrTarget = `grabbo://events?eventId=${encodeURIComponent(event.id)}`;
+  // Public, key-less QR generator — fine for a visual placeholder; swap for
+  // a self-hosted generator if uptime/privacy of a third party is a concern.
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&bgcolor=0B0A08&color=C9A227&data=${encodeURIComponent(qrTarget)}`;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 60 }}
@@ -68,51 +95,67 @@ function EventCard({ event, index }: { event: LuxuryEvent; index: number }) {
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 1, ease: LUXURY_EASE, delay: index * 0.1 }}
       whileHover={{ y: -10, transition: { duration: 0.5, ease: LUXURY_EASE } }}
-      className="group relative shrink-0 w-[340px] snap-start"
+      className="group relative shrink-0 w-[300px] sm:w-[340px] snap-start"
     >
-      <div className="relative h-full bg-gradient-to-br from-gray-900/40 to-black/60 border border-yellow-600/20 rounded-2xl p-7 backdrop-blur-xl overflow-hidden transition-all duration-500 hover:border-yellow-600/40 hover:shadow-gold-lg flex flex-col">
-        {/* Ambient glow on hover */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-yellow-600/0 to-yellow-600/0 group-hover:from-yellow-600/10 group-hover:to-yellow-600/0 transition-all duration-500" />
+      <div className="relative h-full bg-ink-800/40 border hairline rounded-2xl p-6 sm:p-7 backdrop-blur-xl overflow-hidden transition-all duration-500 hover:border-lime/40 hover:shadow-glow flex flex-col">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-lime/0 to-lime/0 group-hover:from-lime/10 group-hover:to-lime/0 transition-all duration-500" />
 
         <div className="relative flex items-start justify-between mb-6">
           <div>
-            <p className="font-serif text-5xl text-yellow-500 font-light leading-none">
+            <p className="font-display text-4xl sm:text-5xl text-lime font-light leading-none">
               {event.date.day}
             </p>
-            <p className="text-xs text-gray-500 tracking-widest mt-2 uppercase">
+            <p className="text-xs text-slate tracking-widest mt-2 uppercase">
               {event.date.month}
             </p>
           </div>
-          <span className="px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-full text-[11px] font-bold text-white uppercase tracking-widest">
+          <span className="px-3 py-1.5 bg-lime text-ink rounded-full text-[11px] font-bold uppercase tracking-widest">
             {event.tag}
           </span>
         </div>
 
-        <h3 className="relative font-serif text-2xl text-white font-light leading-tight mb-3">
+        <h3 className="relative font-display text-xl sm:text-2xl text-paper font-light leading-tight mb-3">
           {event.title}
         </h3>
 
-        <p className="relative text-sm text-gray-400 leading-relaxed mb-6 flex-1">
+        <p className="relative text-sm text-slate leading-relaxed mb-6 flex-1">
           {event.description}
         </p>
 
-        <div className="relative space-y-2 mb-6 text-sm text-gray-400">
+        <div className="relative space-y-2 mb-6 text-sm text-slate">
           <div className="flex items-center gap-2">
-            <MapPin size={14} className="text-yellow-600" /> {event.venue}
+            <MapPin size={14} className="text-lime" /> {event.venue}
           </div>
           <div className="flex items-center gap-2">
-            <Clock size={14} className="text-yellow-600" /> {event.time} &middot; {event.capacity}
+            <Clock size={14} className="text-lime" /> {event.time} &middot; {event.capacity}
           </div>
         </div>
 
-        <div className="relative border-t border-yellow-600/10 pt-5">
+        <div className="relative border-t border-ink-700 pt-5 space-y-4">
           <motion.button
+            onClick={() => grabSpot(event.id)}
             whileHover={{ scale: 1.03, transition: { duration: 0.4, ease: LUXURY_EASE } }}
             whileTap={{ scale: 0.97 }}
-            className="w-full text-sm font-bold uppercase tracking-widest bg-gradient-to-r from-yellow-600 to-amber-600 text-white py-3.5 rounded-xl"
+            className="w-full text-sm font-bold uppercase tracking-widest bg-lime text-ink py-3.5 rounded-xl"
           >
-            Reserve Your Place
+            Grab Your Spot
           </motion.button>
+
+          {/* Desktop fallback — deep links can't resolve without a phone,
+              so give desktop visitors a scannable path instead. */}
+          <div className="hidden md:flex items-center gap-3 pt-1">
+            <img
+              src={qrSrc}
+              alt={`QR code to RSVP for ${event.title} in the Grabbo app`}
+              width={56}
+              height={56}
+              className="rounded-md border border-lime/20 flex-shrink-0"
+            />
+            <p className="text-xs text-slate leading-snug flex items-center gap-1.5">
+              <Smartphone size={12} className="text-lime flex-shrink-0" />
+              Scan, or download the app to RSVP on the go.
+            </p>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -123,46 +166,42 @@ export default function Events() {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scrollByAmount = (dir: 1 | -1) => {
-    scrollerRef.current?.scrollBy({ left: dir * 380, behavior: "smooth" });
+    scrollerRef.current?.scrollBy({ left: dir * 360, behavior: "smooth" });
   };
 
   return (
-    <section id="events" className="relative py-40 overflow-hidden bg-black">
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-950 to-black -z-10" />
-      <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-yellow-600/10 to-transparent blur-3xl -z-10" />
+    <section id="events" className="relative py-24 sm:py-32 lg:py-40 overflow-hidden bg-ink">
+      <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-lime/[0.04] blur-3xl -z-10" />
 
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1.1, ease: LUXURY_EASE }}
-          className="mb-14 flex items-end justify-between gap-6 flex-wrap"
+          className="mb-12 sm:mb-14 flex items-end justify-between gap-6 flex-wrap"
         >
           <div>
-            <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-yellow-600/10 border border-yellow-600/20 backdrop-blur-sm">
-              <Sparkles size={16} className="text-yellow-600" />
-              <span className="text-sm font-semibold text-yellow-600 uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-lime/10 border border-lime/20 backdrop-blur-sm">
+              <Sparkles size={16} className="text-lime" />
+              <span className="text-sm font-semibold text-lime uppercase tracking-wider">
                 Upcoming Events
               </span>
             </div>
-            <h2 className="font-serif text-6xl sm:text-7xl text-white font-light">
+            <h2 className="font-display text-4xl sm:text-6xl lg:text-7xl text-paper font-light">
               Cinematic
               <br />
-              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-600">
-                Experiences
-              </span>
+              <span className="italic text-lime">Experiences</span>
             </h2>
           </div>
 
-          {/* Scroll controls */}
           <div className="hidden md:flex gap-3">
             <motion.button
               onClick={() => scrollByAmount(-1)}
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               aria-label="Scroll events left"
-              className="p-4 rounded-full border border-yellow-600/20 text-yellow-600 hover:border-yellow-600/50 hover:bg-yellow-600/10 transition-colors"
+              className="p-4 rounded-full border border-lime/20 text-lime hover:border-lime/50 hover:bg-lime/10 transition-colors"
             >
               <ArrowLeft size={20} />
             </motion.button>
@@ -171,7 +210,7 @@ export default function Events() {
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               aria-label="Scroll events right"
-              className="p-4 rounded-full border border-yellow-600/20 text-yellow-600 hover:border-yellow-600/50 hover:bg-yellow-600/10 transition-colors"
+              className="p-4 rounded-full border border-lime/20 text-lime hover:border-lime/50 hover:bg-lime/10 transition-colors"
             >
               <ArrowRight size={20} />
             </motion.button>
@@ -179,10 +218,9 @@ export default function Events() {
         </motion.div>
       </div>
 
-      {/* Horizontal scroller — full-bleed so cards can run to the viewport edge */}
       <div
         ref={scrollerRef}
-        className="flex gap-6 overflow-x-auto pb-6 px-6 max-w-[100vw] snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-yellow-600/30 [&::-webkit-scrollbar-thumb]:rounded-full"
+        className="flex gap-6 overflow-x-auto pb-6 px-4 sm:px-8 lg:px-16 max-w-[100vw] snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-lime/30 [&::-webkit-scrollbar-thumb]:rounded-full"
         style={{ scrollPaddingLeft: "1.5rem" }}
       >
         <div className="shrink-0 w-[max(0px,calc((100vw-80rem)/2))]" aria-hidden />
