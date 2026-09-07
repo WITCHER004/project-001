@@ -9,6 +9,8 @@ import Testimonials from "@/components/Testimonials";
 import Advisory from "@/components/Advisory";
 import TopTicker from "@/components/TopTicker";
 import ConciergeFAB from "@/components/ConciergeFAB";
+import VisionLuxury from "@/components/VisionLuxury";
+import GuidelinesLuxury from "@/components/GuidelinesLuxury";
 
 const HeroLuxury = dynamic(
   () => import("@/components/HeroLuxury"), 
@@ -24,9 +26,11 @@ export default function Home() {
       <HeroLuxury />
       <ShopLuxury />
       <AboutLuxury />
+      <VisionLuxury />
       <Advisory />
       <Events />
       <Testimonials />
+      <GuidelinesLuxury />
       <FooterLuxury />
       <ConciergeFAB />
     </main>

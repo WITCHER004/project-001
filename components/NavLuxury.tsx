@@ -44,22 +44,25 @@ export default function NavLuxury() {
           : "bg-transparent"
       }`}
     >
-      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-6">
+      <nav className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 lg:px-16 py-5 sm:py-6">
         {/* Logo */}
         <motion.a
           href="#top"
           whileHover={{ scale: 1.05 }}
           className="flex items-center gap-3"
         >
-          <span className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-lime/30">
+          <span className="relative w-9 h-9 flex-shrink-0 drop-shadow-[0_2px_8px_rgba(201,162,39,0.45)]">
             <Image
               src="/logo.jpg"
               alt="Grabbo"
               fill
               sizes="36px"
-              // grayscale keeps the mark from fighting the ink/paper/lime system;
-              // the lime ring above is what carries the brand accent instead.
-              className="object-cover grayscale contrast-125 mix-blend-luminosity"
+              // True brand colors now show through — grounded in the dark
+              // navbar with a warm gold-tinted drop-shadow (on the wrapping
+              // span, not the image, so overflow-hidden doesn't clip it)
+              // instead of the grayscale/blend filter that was suppressing
+              // the logo's own colors.
+              className="object-cover rounded-full ring-1 ring-lime/20"
             />
           </span>
           <span className="font-display text-2xl font-light tracking-tight text-paper">

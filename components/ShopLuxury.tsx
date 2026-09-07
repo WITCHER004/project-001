@@ -278,6 +278,11 @@ export default function ShopLuxury() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [recommendations, setRecommendations] = useState<Product[]>([]);
   const itemCount = useCartStore((state) => state.getItemCount());
+  const [isMounted, setIsMounted] = useState(false);
+
+useEffect(() => {
+  setIsMounted(true);
+}, []);
 
   const loadProducts = useCallback(async () => {
     setStatus("loading");
@@ -432,7 +437,7 @@ export default function ShopLuxury() {
           transition={revealTransition(0.1)}
           className="text-center pt-8 border-t border-yellow-600/10"
         >
-          {itemCount > 0 && (
+         {isMounted && itemCount > 0 && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

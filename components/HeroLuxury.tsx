@@ -1,39 +1,44 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
-import { ArrowDownRight, Sparkles, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { ArrowDownRight, Moon, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import RevealText from "./RevealText";
+import { useLateNightMode } from "@/hooks/useLateNightMode";
 
-const Scene3DLuxury = dynamic(() => import("./Scene3DLuxury"), { 
+const Scene3DLuxury = dynamic(() => import("./Scene3DLuxury"), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-gradient-to-br from-black to-gray-900" />
+  loading: () => <div className="w-full h-full bg-ink" />,
 });
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.3,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 1, ease: "easeOut" },
-  },
-};
-
 export default function HeroUltraCinematic() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isClient, setIsClient] = useState(false);
   const [scrollHint, setScrollHint] = useState(true);
+  const lateNight = useLateNightMode();
+
+  const heroRef = useRef<HTMLElement>(null);
+  const cursorX = useMotionValue(-9999);
+  const cursorY = useMotionValue(-9999);
+  const spotlightX = useSpring(cursorX, { stiffness: 120, damping: 25 });
+  const spotlightY = useSpring(cursorY, { stiffness: 120, damping: 25 });
+
+  // Blur/fade thresholds scale to the viewport's own height so a short
+  // mobile hero finishes its focus-pull in the same visual proportion as a
+  // tall desktop one, instead of using a fixed pixel range that triggers
+  // too late (or never) on small screens.
+  const [viewportHeight, setViewportHeight] = useState(900);
+  useEffect(() => {
+    const update = () => setViewportHeight(window.innerHeight);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const { scrollY } = useScroll();
+  const sceneBlur = useTransform(scrollY, [0, viewportHeight], [0, 18]);
+  const sceneOpacity = useTransform(scrollY, [0, viewportHeight], [1, 0.35]);
+  const sceneBlurFilter = useTransform(sceneBlur, (v) => `blur(${v}px)`);
 
   useEffect(() => {
     setIsClient(true);
@@ -41,16 +46,17 @@ export default function HeroUltraCinematic() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setScrollHint(false);
-      } else {
-        setScrollHint(true);
+      const rect = heroRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      // Only active while the cursor is over the hero band.
+      if (e.clientY > rect.bottom) {
+        cursorX.set(-9999);
+        return;
       }
+      cursorX.set(e.clientX);
+      cursorY.set(e.clientY);
     };
+    const handleScroll = () => setScrollHint(window.scrollY <= 100);
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("scroll", handleScroll);
@@ -58,158 +64,128 @@ export default function HeroUltraCinematic() {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [cursorX, cursorY]);
 
   return (
-    <section id="top" className="relative min-h-screen overflow-hidden pt-24 pb-20 bg-black">
-      {/* Luxury gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-950 to-black -z-20" />
-
-      {/* Gold gradient orbs */}
-      <div className="absolute -top-60 -right-60 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-yellow-600/20 to-transparent blur-3xl -z-10 opacity-60" />
-      <div className="absolute -bottom-40 -left-60 w-[700px] h-[700px] rounded-full bg-gradient-to-tr from-red-700/15 to-transparent blur-3xl -z-10" />
-
-      {/* Luxury grain overlay */}
-      <div className="absolute inset-0 bg-grain opacity-3 pointer-events-none -z-5" />
-
-      {/* Gold light streaks */}
-      <div className="absolute top-0 left-1/4 w-1 h-96 bg-gradient-to-b from-yellow-500/30 to-transparent blur-xl -z-10" />
-      <div className="absolute top-1/4 right-1/3 w-1 h-96 bg-gradient-to-b from-red-500/25 to-transparent blur-xl -z-10" />
-
-      {/* Mouse glow effect */}
-      {isClient && (
-        <motion.div
-          className="pointer-events-none fixed w-96 h-96 rounded-full bg-gradient-to-r from-yellow-600/15 to-red-600/10 blur-3xl -z-5"
-          animate={{
-            x: mousePosition.x - 192,
-            y: mousePosition.y - 192,
+    <>
+      {/* Full-bleed 3D background — pinned behind the entire page, not
+          scoped to the hero's own box. Sharpness fades on scroll via the
+          motion values above. */}
+      <motion.div
+        aria-hidden
+        className="fixed inset-0 w-full h-full z-[-1]"
+        style={{ filter: sceneBlurFilter, opacity: sceneOpacity }}
+      >
+        {isClient && <Scene3DLuxury />}
+        {/* Cinematic vignette + warm/cool grade, sits above the canvas */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse at center, transparent 40%, rgba(11,10,8,0.55) 100%)",
           }}
-          transition={{ type: "spring", damping: 40, stiffness: 300 }}
         />
-      )}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: lateNight
+              ? "linear-gradient(135deg, rgba(139,58,58,0.10) 0%, rgba(11,10,8,0.2) 100%)"
+              : "linear-gradient(135deg, rgba(201,162,39,0.06) 0%, rgba(139,58,58,0.05) 100%)",
+          }}
+        />
+      </motion.div>
 
-      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative z-20">
-        {/* Text Content */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="z-10"
-        >
-          {/* Premium badge */}
+      <section ref={heroRef} id="top" className="relative min-h-screen overflow-hidden pt-20 sm:pt-24 pb-16 sm:pb-20">
+        {/* Cursor spotlight — soft antique-gold glow that tracks the mouse */}
+        {isClient && (
           <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center gap-2 mb-8"
-          >
-            <div className="p-2 rounded-lg bg-yellow-600/10 border border-yellow-600/40 backdrop-blur-xl">
-              <Zap className="w-4 h-4 text-yellow-500 animate-pulse" />
-            </div>
-            <span className="text-sm font-semibold text-yellow-600/90 tracking-widest uppercase">
-              Cinematic Spectacle
-            </span>
-          </motion.div>
+            aria-hidden
+            className="pointer-events-none absolute w-[520px] h-[520px] rounded-full -z-[1]"
+            style={{
+              left: spotlightX,
+              top: spotlightY,
+              x: "-50%",
+              y: "-50%",
+              background:
+                "radial-gradient(circle, rgba(201,162,39,0.14) 0%, rgba(201,162,39,0.05) 45%, transparent 70%)",
+            }}
+          />
+        )}
 
-          {/* Main Headline */}
-          <motion.h1
-            variants={itemVariants}
-            className="font-serif text-6xl sm:text-7xl lg:text-8xl leading-[1.05] mb-6 text-white"
-          >
-            A Flavor
-            <br />
-            <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-500 to-red-500">
-              Cascade
-            </span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            variants={itemVariants}
-            className="text-lg text-gray-400 max-w-md mb-12 leading-relaxed font-light"
-          >
-            Experience an infinite cinematic spectacle. Watch chips and cokes collide in a mesmerizing dance. The blur intensifies with your scroll—pure visual poetry.
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-wrap items-center gap-5 mb-16"
-          >
-            <motion.a
-              href="#shop"
-              whileHover={{ y: -4, boxShadow: "0 0 40px rgba(251, 191, 36, 0.4)" }}
-              whileTap={{ scale: 0.95 }}
-              className="group inline-flex items-center gap-3 bg-gradient-to-r from-yellow-500 to-red-600 text-black font-bold px-8 py-4 rounded-xl shadow-2xl hover:shadow-gold-lg transition-all duration-300"
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 grid md:grid-cols-2 gap-10 sm:gap-16 items-center relative z-20">
+          {/* Text Content — volumetric reveal: emerges from depth (blurred,
+              scaled up, translucent) into sharp focus, like a title card. */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, scale: 1.4, filter: "blur(18px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-flex items-center gap-2 mb-8"
             >
-              Explore Now
-              <ArrowDownRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={20} />
-            </motion.a>
+              <div className="p-2 rounded-lg bg-lime/10 border border-lime/30 backdrop-blur-xl">
+                {lateNight ? (
+                  <Moon className="w-4 h-4 text-lime" />
+                ) : (
+                  <Sparkles className="w-4 h-4 text-lime animate-pulse" />
+                )}
+              </div>
+              <span className="text-sm font-semibold text-lime/90 tracking-widest uppercase">
+                {lateNight ? "Late Night Menu Live" : "Your Campus, Curated"}
+              </span>
+            </motion.div>
 
-            <motion.a
-              href="#about"
-              whileHover={{ x: 4 }}
-              className="text-sm font-semibold text-yellow-500/80 hover:text-yellow-400 transition-colors group flex items-center gap-2 border border-yellow-600/30 px-6 py-4 rounded-lg"
-            >
-              Our Story
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </motion.a>
-          </motion.div>
+            <RevealText staggerDelay={0.18}>
+              <motion.h1
+                initial={{ opacity: 0, y: 30, scale: 1.15, filter: "blur(14px)" }}
+                whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.05] mb-6 text-paper"
+              >
+                {lateNight ? "Midnight" : "A Flavor"}
+                <br />
+                <span className="italic text-lime">
+                  {lateNight ? "Cravings" : "Cascade"}
+                </span>
+              </motion.h1>
 
-          {/* Premium Stats */}
-          <motion.div
-            variants={itemVariants}
-            className="flex items-center gap-12 pt-8 border-t border-yellow-600/20"
-          >
-            <div className="space-y-1">
-              <p className="font-serif text-4xl text-yellow-500">70+</p>
-              <p className="text-xs text-gray-500 uppercase tracking-widest">Particles Falling</p>
-            </div>
-            <div className="w-px h-12 bg-yellow-600/20" />
-            <div className="space-y-1">
-              <p className="font-serif text-4xl text-yellow-500">5PT</p>
-              <p className="text-xs text-gray-500 uppercase tracking-widest">Light Setup</p>
-            </div>
-            <div className="w-px h-12 bg-yellow-600/20" />
-            <div className="space-y-1">
-              <p className="font-serif text-4xl text-yellow-500">60FPS</p>
-              <p className="text-xs text-gray-500 uppercase tracking-widest">Smooth</p>
-            </div>
-          </motion.div>
-        </motion.div>
+              <p className="text-lg text-slate max-w-md mb-12 leading-relaxed font-light">
+                {lateNight
+                  ? "Hostel lights still on? The Late Night Menu is live — quick eats, quiet delivery, straight to your block."
+                  : "Everything your campus runs on, delivered like it means something. Watch the scene settle as you scroll — this is the whole store, in one frame."}
+              </p>
 
-        {/* 3D Ultra-Cinematic Scene */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.3 }}
-          className="relative h-[500px] md:h-[650px]"
-        >
-          <div className="absolute inset-0 rounded-3xl overflow-hidden bg-gradient-to-br from-gray-900/60 to-black/80 backdrop-blur-2xl border border-yellow-600/15 shadow-2xl">
-            <Scene3DLuxury />
+              <div className="flex flex-wrap items-center gap-5 mb-16">
+                <motion.a
+                  href="#shop"
+                  whileHover={{ y: -4, boxShadow: "0 0 40px rgba(201,162,39,0.35)" }}
+                  whileTap={{ scale: 0.95 }}
+                  className="group inline-flex items-center gap-3 bg-lime text-ink font-bold px-8 py-4 rounded-xl shadow-2xl hover:shadow-gold-lg transition-all duration-300"
+                >
+                  {lateNight ? "Order Late Night Menu" : "Explore Now"}
+                  <ArrowDownRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={20} />
+                </motion.a>
+
+                <motion.a
+                  href="#about"
+                  whileHover={{ x: 4 }}
+                  className="text-sm font-semibold text-paper/80 hover:text-lime transition-colors group flex items-center gap-2 border border-ink-700 px-6 py-4 rounded-lg"
+                >
+                  Our Story
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </motion.a>
+              </div>
+            </RevealText>
           </div>
 
-          {/* Gold corner accents with animation */}
-          <motion.div
-            animate={{ opacity: [0.2, 0.5, 0.2], scale: [0.95, 1.05, 0.95] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute top-4 right-4 w-24 h-24 border border-yellow-600/40 rounded-full backdrop-blur-md pointer-events-none"
-          />
-          <motion.div
-            animate={{ opacity: [0.2, 0.5, 0.2], scale: [1.05, 0.95, 1.05] }}
-            transition={{ duration: 4, repeat: Infinity, delay: 1 }}
-            className="absolute bottom-4 left-4 w-20 h-20 border border-red-600/30 rounded-full backdrop-blur-md pointer-events-none"
-          />
+          {/* Right column is now empty of its own boxed canvas — the scene
+              lives full-bleed behind the whole page. This spacer keeps the
+              two-column rhythm on desktop without a redundant nested canvas. */}
+          <div className="hidden md:block h-[500px]" />
+        </div>
 
-          {/* Cinematic gradient overlays */}
-          <div className="absolute inset-0 rounded-3xl pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/0 via-transparent to-black/40 rounded-3xl" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-900/5 to-transparent rounded-3xl" />
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Scroll indicator with blur hint */}
-      <AnimatedScrollIndicator show={scrollHint} />
-    </section>
+        <AnimatedScrollIndicator show={scrollHint} />
+      </section>
+    </>
   );
 }
 
@@ -220,14 +196,12 @@ function AnimatedScrollIndicator({ show }: { show: boolean }) {
       transition={{ duration: 2, repeat: Infinity }}
       className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-3 z-20"
     >
-      <span className="text-xs text-gray-500 uppercase tracking-widest">
-        Scroll for blur effect
-      </span>
-      <div className="w-6 h-10 border border-yellow-600/40 rounded-full flex justify-center p-2">
+      <span className="text-xs text-slate uppercase tracking-widest">Scroll</span>
+      <div className="w-6 h-10 border border-lime/40 rounded-full flex justify-center p-2">
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="w-1 h-2 bg-gradient-to-b from-yellow-600 to-red-600 rounded-full"
+          className="w-1 h-2 bg-lime rounded-full"
         />
       </div>
     </motion.div>

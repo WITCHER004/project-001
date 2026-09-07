@@ -75,7 +75,7 @@ function MagneticIcon({
 export default function FooterLuxury() {
   return (
     <footer className="bg-ink border-t border-ink-700 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 py-20 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 py-16 sm:py-20 relative z-10">
         <div className="grid md:grid-cols-4 gap-12 mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

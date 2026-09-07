@@ -4,12 +4,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   background-color: #0B0A08;
   color: #F3ECDC;
   position: relative;
+  overflow-x: hidden;
 }
 
 /* Subtle film-grain over the whole site — this is most of what separates

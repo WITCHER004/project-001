@@ -3,7 +3,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Trash2, Plus, Minus, Check, ArrowRight } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDrawerSwooshSound } from "@/hooks/useDrawerSwooshSound";
+import { useAddToCartSound } from "@/hooks/useAddToCartSound";
 
 const APP_STORE_FALLBACK = "https://apps.apple.com/app/grabbo"; // TODO: real listing
 const PLAY_STORE_FALLBACK = "https://play.google.com/store/apps/details?id=com.grabbo"; // TODO: real listing
@@ -23,16 +25,38 @@ export default function CartDrawerLuxury() {
   const [stage, setStage] = useState<"idle" | "handoff">("idle");
   const total = getTotal();
   const itemCount = getItemCount();
+  const playSwoosh = useDrawerSwooshSound();
+  const playThunk = useAddToCartSound();
+
+  // Every quantity change here is a direct zustand state write (see
+  // store/cartStore.ts) — there's no server round-trip to wait on, so the
+  // UI is optimistic by construction rather than needing a separate
+  // "optimistic" code path bolted on top.
+  useEffect(() => {
+    if (isCartOpen) playSwoosh();
+  }, [isCartOpen, playSwoosh]);
+
+  const bumpQuantity = (id: string, next: number) => {
+    updateQuantity(id, next);
+    playThunk();
+  };
 
   const handleContinueInApp = () => {
     setStage("handoff");
 
-    // Encode the cart so the app can pick up exactly where the web left off —
-    // nothing here claims a purchase has happened, it just carries the bag over.
-    const payload = encodeURIComponent(
-      JSON.stringify(items.map((i) => ({ id: i.id, qty: i.quantity })))
-    );
-    const deepLink = `grabbo://checkout?cart=${payload}`;
+    // Serialize the full cart (not just ids) so the app can render the final
+    // swipe-to-pay screen directly — no re-fetching product data, no detour
+    // through the app's home screen. This still isn't a purchase: nothing
+    // here claims payment has happened, it only carries state across.
+    const cartPayload = {
+      v: 1,
+      items: items.map((i) => ({ id: i.id, name: i.name, price: i.price, qty: i.quantity })),
+      total,
+      currency: "INR",
+      source: "web",
+    };
+    const encoded = encodeURIComponent(btoa(JSON.stringify(cartPayload)));
+    const deepLink = `grabbo://checkout/pay?cart=${encoded}`;
     const fallback = /android/i.test(navigator.userAgent)
       ? PLAY_STORE_FALLBACK
       : APP_STORE_FALLBACK;
@@ -144,7 +168,7 @@ export default function CartDrawerLuxury() {
                               <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => bumpQuantity(item.id, item.quantity - 1)}
                                 className="p-1.5 rounded-md bg-ink border border-ink-700 hover:border-lime/40 text-slate hover:text-lime transition-colors"
                               >
                                 <Minus size={14} />
@@ -155,7 +179,7 @@ export default function CartDrawerLuxury() {
                               <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => bumpQuantity(item.id, item.quantity + 1)}
                                 className="p-1.5 rounded-md bg-ink border border-ink-700 hover:border-lime/40 text-slate hover:text-lime transition-colors"
                               >
                                 <Plus size={14} />
