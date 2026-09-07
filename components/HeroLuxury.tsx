@@ -9,7 +9,7 @@ import { useLateNightMode } from "@/hooks/useLateNightMode";
 
 const Scene3DLuxury = dynamic(() => import("./Scene3DLuxury"), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-ink" />,
+  loading: () => <div className="w-full h-[100dvh] bg-ink" />,
 });
 
 export default function HeroUltraCinematic() {
@@ -73,7 +73,7 @@ export default function HeroUltraCinematic() {
           motion values above. */}
       <motion.div
         aria-hidden
-        className="fixed inset-0 w-full h-full z-[-1]"
+        className="fixed inset-0 w-full h-[100dvh] z-[-1]"
         style={{ filter: sceneBlurFilter, opacity: sceneOpacity }}
       >
         {isClient && <Scene3DLuxury />}
