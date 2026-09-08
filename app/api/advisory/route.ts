@@ -49,8 +49,8 @@ export interface ConciergePayload {
  * the result for a few minutes so every visitor isn't triggering a fresh
  * generation.
  *
- * Data below is illustrative and scoped to K.R. Mangalam University,
- * Sohna Road, Gurugram — swap for the real campus once this ships.
+ * Data below is illustrative and scoped to Shiv Nadar University, Dadri,
+ * Greater Noida — swap for the real campus once this ships.
  *
  * The artificial delay exists only so the skeleton state in Advisory.tsx
  * is visible in this demo; a real cached response would typically return
@@ -60,34 +60,34 @@ export async function GET() {
   await new Promise((r) => setTimeout(r, 900));
 
   const payload: ConciergePayload = {
-    campus: "K.R. Mangalam University, Sohna Road, Gurugram",
+    campus: "Shiv Nadar University, Dadri, Greater Noida",
     generatedAt: new Date().toISOString(),
     weather: {
-      location: "Gurugram, NCR",
-      tempC: 34,
-      feelsLikeC: 37,
+      location: "Greater Noida, NCR",
+      tempC: 33,
+      feelsLikeC: 36,
       condition: "Hazy sunshine",
-      aqi: 168,
+      aqi: 172,
       advice: "AQI is trending into the 'moderate–poor' band — keep evening ground sessions short.",
     },
     cafeteria: {
-      hall: "Cafeteria Block A",
+      hall: "Dining Hall 2 (DH2)",
       meal: "Dinner",
-      items: ["Rajma Chawal", "Paneer Bhurji Wrap", "Cold Coffee Bar", "Live Dosa Counter"],
+      items: ["Dal Makhani & Jeera Rice", "South Indian Live Counter", "Grilled Sandwich Bar", "Multi-Cuisine Salad Station"],
       nextUpdate: "Late Night Menu unlocks at 9:00 PM",
     },
     library: {
-      block: "Central Library — 2nd Floor Reading Room",
-      seatsAvailable: 42,
-      seatsTotal: 220,
-      busiestWindow: "7–9 PM this week (mid-sem prep)",
+      block: "Central Library — 3rd Floor Reading Room",
+      seatsAvailable: 57,
+      seatsTotal: 300,
+      busiestWindow: "7–10 PM this week (mid-sem prep)",
     },
     advisories: [
       {
-        id: "water-block-c",
+        id: "water-hostel-j",
         tag: "Campus Notice",
-        title: "Block C water supply maintenance",
-        body: "Water will be shut off in Block C from 11am–2pm tomorrow. Stock up at the Grabbo store before 10:45am.",
+        title: "Hostel Block J water supply maintenance",
+        body: "Water will be shut off in Block J from 11am–2pm tomorrow. Stock up at the Grabbo store before 10:45am.",
       },
       {
         id: "rain-evening",
@@ -99,7 +99,7 @@ export async function GET() {
         id: "shuttle-window",
         tag: "Advisory",
         title: "Shuttle timing shifted for exam week",
-        body: "The Sohna Road metro shuttle now runs every 20 minutes, 7am–11pm, through the exam period.",
+        body: "The Pari Chowk metro shuttle now runs every 20 minutes, 7am–11pm, through the exam period.",
       },
     ],
   };

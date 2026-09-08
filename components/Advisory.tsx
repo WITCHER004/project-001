@@ -18,18 +18,18 @@ const LUXURY_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 // Shown immediately if the feed fails to load, so the dashboard never goes
 // empty — clearly labelled as cached rather than live.
 const FALLBACK_PAYLOAD: ConciergePayload = {
-  campus: "K.R. Mangalam University, Sohna Road, Gurugram",
+  campus: "Shiv Nadar University, Dadri, Greater Noida",
   generatedAt: new Date().toISOString(),
   weather: {
-    location: "Gurugram, NCR",
-    tempC: 32,
-    feelsLikeC: 34,
+    location: "Greater Noida, NCR",
+    tempC: 31,
+    feelsLikeC: 33,
     condition: "Clear",
     aqi: 140,
     advice: "Briefing is warming up — showing the last known snapshot instead.",
   },
   cafeteria: {
-    hall: "Cafeteria Block A",
+    hall: "Dining Hall 2 (DH2)",
     meal: "Today",
     items: ["Menu refreshing…"],
     nextUpdate: "Check back shortly",
@@ -37,7 +37,7 @@ const FALLBACK_PAYLOAD: ConciergePayload = {
   library: {
     block: "Central Library",
     seatsAvailable: 0,
-    seatsTotal: 220,
+    seatsTotal: 300,
     busiestWindow: "—",
   },
   advisories: [

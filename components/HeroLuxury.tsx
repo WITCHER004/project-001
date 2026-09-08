@@ -21,7 +21,6 @@ const MotionLink = motion(Link);
 
 export default function HeroUltraCinematic() {
   const [isClient, setIsClient] = useState(false);
-  const [scrollHint, setScrollHint] = useState(true);
   const lateNight = useLateNightMode();
 
   const heroRef = useRef<HTMLElement>(null);
@@ -63,13 +62,10 @@ export default function HeroUltraCinematic() {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
     };
-    const handleScroll = () => setScrollHint(window.scrollY <= 100);
 
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("scroll", handleScroll);
     };
   }, [cursorX, cursorY]);
 
@@ -189,28 +185,7 @@ export default function HeroUltraCinematic() {
               two-column rhythm on desktop without a redundant nested canvas. */}
           <div className="hidden md:block h-[500px]" />
         </div>
-
-        <AnimatedScrollIndicator show={scrollHint} />
       </section>
     </>
-  );
-}
-
-function AnimatedScrollIndicator({ show }: { show: boolean }) {
-  return (
-    <motion.div
-      animate={{ y: [0, 10, 0], opacity: show ? 1 : 0 }}
-      transition={{ duration: 2, repeat: Infinity }}
-      className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-3 z-20"
-    >
-      <span className="text-xs text-slate uppercase tracking-widest">Scroll</span>
-      <div className="w-6 h-10 border border-lime/40 rounded-full flex justify-center p-2">
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-1 h-2 bg-lime rounded-full"
-        />
-      </div>
-    </motion.div>
   );
 }

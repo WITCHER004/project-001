@@ -12,7 +12,7 @@ interface Guideline {
 const GUIDELINES: Guideline[] = [
   {
     title: "Delivery Windows",
-    body: "Orders placed before 11pm are delivered same-day within your block's usual window. Late Night Menu orders (9pm–5am) are delivered on a rolling basis as riders become available — expect slightly longer waits at peak hours.",
+    body: "Grabbo runs on a single, uninterrupted service window — 24 hours, every day of the year. There is no cutoff, no shift change, and no distinction between an order placed at 2pm and one placed at 2am: the moment it's placed, the nearest available rider is dispatched. Expect the same unhurried, considered pace at any hour.",
   },
   {
     title: "Cancellations & Changes",
